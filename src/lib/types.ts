@@ -58,6 +58,7 @@ export interface MatchView extends MatchRow {
   };
   date_venue: string; // YYYY-MM-DD at venue
   stage_label: string;
+  events: MatchEvent[];
 }
 
 export type QualStatus =
@@ -101,6 +102,29 @@ export interface KnockoutMapping {
   side: 'home' | 'away';
   slot_type: SlotType;
   ref: string;
+}
+
+export interface Player {
+  id: number;
+  af_id: number | null;
+  team_id: number;
+  name: string;
+  position: string | null;
+  shirt_number: number | null;
+  photo_url: string | null;
+}
+
+export type MatchEventType = 'goal' | 'own-goal' | 'penalty' | 'yellow' | 'red';
+
+export interface MatchEvent {
+  id: number;
+  match_id: number;
+  team_id: number | null;
+  player_id: number | null;
+  player_name: string;
+  type: MatchEventType;
+  minute: number | null;
+  minute_extra: number | null;
 }
 
 export interface RefreshLog {

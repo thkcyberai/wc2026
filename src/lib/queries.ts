@@ -1,6 +1,6 @@
 import { getDb } from './db';
 import { DISPLAY_ZONES, formatInZone, dayShift, dateInZone, prettyDate } from './time';
-import type { GroupView, MatchView, StandingRow, Stage, Team, Venue } from './types';
+import type { GroupView, MatchEvent, MatchView, StandingRow, Stage, Team, Venue } from './types';
 import { GROUPS } from './seed-data';
 
 const STAGE_LABELS: Record<Stage, string> = {
@@ -39,7 +39,22 @@ const MATCH_SELECT = `
   JOIN venues v ON v.id = m.venue_id
 `;
 
-function toView(r: RawJoined): MatchView {
+function getAllEvents(): Map<number, MatchEvent[]> {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT * FROM match_events
+    ORDER BY match_id, COALESCE(minute, 0), COALESCE(minute_extra, 0), id
+  `).all() as MatchEvent[];
+  const map = new Map<number, MatchEvent[]>();
+  for (const e of rows) {
+    const list = map.get(e.match_id) ?? [];
+    list.push(e);
+    map.set(e.match_id, list);
+  }
+  return map;
+}
+
+function toView(r: RawJoined, events?: Map<number, MatchEvent[]>): MatchView {
   const venue: Venue = {
     id: r.venue_id, key: r.v_key, name: r.v_name, city: r.v_city,
     country: r.v_country as Venue['country'], timezone: r.v_tz, utc_offset_minutes: r.v_off,
@@ -64,6 +79,7 @@ function toView(r: RawJoined): MatchView {
     stage_label: r.stage === 'GROUP' && r.group_letter
       ? `Group ${r.group_letter}`
       : STAGE_LABELS[r.stage],
+    events: events?.get(r.id) ?? [],
     times: {
       venue: `${formatInZone(r.kickoff_utc, venue.timezone)}`,
       lisboa: `${formatInZone(r.kickoff_utc, DISPLAY_ZONES.lisboa)}${dayShift(r.kickoff_utc, DISPLAY_ZONES.lisboa, venue.timezone)}`,
@@ -76,7 +92,8 @@ function toView(r: RawJoined): MatchView {
 export function getAllMatches(): MatchView[] {
   const db = getDb();
   const rows = db.prepare(`${MATCH_SELECT} ORDER BY m.kickoff_utc, m.id`).all() as RawJoined[];
-  return rows.map(toView);
+  const events = getAllEvents();
+  return rows.map((r) => toView(r, events));
 }
 
 export function getMatchesByIds(ids: number[]): MatchView[] {
@@ -85,7 +102,8 @@ export function getMatchesByIds(ids: number[]): MatchView[] {
   const rows = db
     .prepare(`${MATCH_SELECT} WHERE m.id IN (${ids.map(() => '?').join(',')}) ORDER BY m.kickoff_utc`)
     .all(...ids) as RawJoined[];
-  return rows.map(toView);
+  const events = getAllEvents();
+  return rows.map((r) => toView(r, events));
 }
 
 export function getDashboard() {

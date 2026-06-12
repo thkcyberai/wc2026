@@ -64,6 +64,41 @@ CREATE TABLE IF NOT EXISTS knockout_mapping (
   PRIMARY KEY (match_id, side)
 );
 
+CREATE TABLE IF NOT EXISTS players (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  af_id        INTEGER UNIQUE,            -- API-Football player id
+  team_id      INTEGER NOT NULL REFERENCES teams(id),
+  name         TEXT NOT NULL,
+  position     TEXT,
+  shirt_number INTEGER,
+  photo_url    TEXT
+);
+
+CREATE TABLE IF NOT EXISTS match_events (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  match_id    INTEGER NOT NULL REFERENCES matches(id),
+  team_id     INTEGER REFERENCES teams(id),
+  player_id   INTEGER REFERENCES players(id),
+  player_name TEXT NOT NULL,
+  type        TEXT NOT NULL CHECK (type IN ('goal','own-goal','penalty','yellow','red')),
+  minute      INTEGER,
+  minute_extra INTEGER
+);
+
+-- maps our match ids to API-Football fixture ids
+CREATE TABLE IF NOT EXISTS af_fixture_map (
+  match_id      INTEGER PRIMARY KEY REFERENCES matches(id),
+  af_fixture_id INTEGER NOT NULL,
+  events_synced INTEGER NOT NULL DEFAULT 0
+);
+
+-- fallback top-scorer data from football-data.org (no photos)
+CREATE TABLE IF NOT EXISTS fd_scorers (
+  player_name TEXT PRIMARY KEY,
+  team_id     INTEGER REFERENCES teams(id),
+  goals       INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS refresh_logs (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
   ran_at          TEXT NOT NULL,
@@ -73,6 +108,8 @@ CREATE TABLE IF NOT EXISTS refresh_logs (
   message         TEXT NOT NULL DEFAULT ''
 );
 
+CREATE INDEX IF NOT EXISTS idx_players_team ON players (team_id);
+CREATE INDEX IF NOT EXISTS idx_events_match ON match_events (match_id);
 CREATE INDEX IF NOT EXISTS idx_matches_kickoff ON matches (kickoff_utc);
 CREATE INDEX IF NOT EXISTS idx_matches_group ON matches (group_letter);
 CREATE INDEX IF NOT EXISTS idx_matches_stage ON matches (stage);

@@ -13,6 +13,7 @@ interface MetaData {
   logs: RefreshLog[];
   openAiConfigured: boolean;
   footballDataConfigured: boolean;
+  apiFootballConfigured: boolean;
 }
 
 function Dot({ ok }: { ok: boolean }) {
@@ -53,6 +54,13 @@ export default function SettingsPage() {
           <Dot ok={data.openAiConfigured} />
           OpenAI API key{' '}
           {data.openAiConfigured ? 'configured (data normalization enabled)' : 'missing — add OPENAI_API_KEY to .env'}
+        </p>
+        <p className="flex items-center gap-2 text-sm text-zinc-300">
+          <Dot ok={data.apiFootballConfigured} />
+          API-Football key{' '}
+          {data.apiFootballConfigured
+            ? 'configured (squads, photos, goalscorers & cards enabled)'
+            : 'missing — add API_FOOTBALL_KEY (free at dashboard.api-sports.io) for squads, photos, scorers & cards'}
         </p>
         <p className="text-[12px] text-zinc-500">
           OpenAI is used server-side only, to normalize team/venue names, standardize statuses and

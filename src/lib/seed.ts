@@ -8,6 +8,10 @@ import { resolveKnockout } from './knockout';
 export function seedDatabase(db: Database.Database): { teams: number; matches: number } {
   const run = db.transaction(() => {
     db.exec(`
+      DELETE FROM match_events;
+      DELETE FROM af_fixture_map;
+      DELETE FROM fd_scorers;
+      DELETE FROM players;
       DELETE FROM knockout_mapping;
       DELETE FROM standings;
       DELETE FROM matches;

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getMeta, getRefreshLogs } from '@/lib/queries';
 import { isSeeded } from '@/lib/db';
 import { openAiAvailable } from '@/lib/openaiClient';
+import { apiFootballAvailable } from '@/lib/apiFootball';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,7 @@ export async function GET() {
       logs: getRefreshLogs(20),
       openAiConfigured: openAiAvailable(),
       footballDataConfigured: Boolean(process.env.FOOTBALL_DATA_API_KEY),
+      apiFootballConfigured: apiFootballAvailable(),
     });
   } catch (err) {
     console.error('[api/meta]', err);

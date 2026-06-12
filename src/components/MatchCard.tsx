@@ -1,8 +1,37 @@
 'use client';
 
-import type { MatchView } from '@/lib/types';
+import type { MatchEvent, MatchView } from '@/lib/types';
 import { StatusChip } from './ui';
 import Flag from './Flag';
+
+function eventIcon(type: MatchEvent['type']): string {
+  switch (type) {
+    case 'goal': return '⚽';
+    case 'penalty': return '⚽ (pen)';
+    case 'own-goal': return '⚽ (og)';
+    case 'yellow': return '🟨';
+    case 'red': return '🟥';
+  }
+}
+
+function minuteLabel(e: MatchEvent): string {
+  if (e.minute === null) return '';
+  return `${e.minute}${e.minute_extra ? `+${e.minute_extra}` : ''}'`;
+}
+
+function EventList({ events, teamId }: { events: MatchEvent[]; teamId: number | null }) {
+  const list = events.filter((e) => e.team_id === teamId);
+  if (!list.length) return null;
+  return (
+    <ul className="space-y-0.5">
+      {list.map((e) => (
+        <li key={e.id} className="text-[11px] leading-tight text-zinc-400">
+          {eventIcon(e.type)} {minuteLabel(e)} {e.player_name}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function TeamLabel({
   team,
@@ -60,6 +89,13 @@ export default function MatchCard({ match, compact = false }: { match: MatchView
           )}
         </div>
       </div>
+
+      {match.events.length > 0 && (
+        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-2">
+          <EventList events={match.events} teamId={match.home_team_id} />
+          <EventList events={match.events} teamId={match.away_team_id} />
+        </div>
+      )}
 
       <div className="mt-3 border-t border-white/10 pt-2 text-[12px] text-zinc-400">
         <p className="truncate">

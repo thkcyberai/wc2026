@@ -8,6 +8,8 @@ const TABS = [
   { href: '/groups', label: 'Groups' },
   { href: '/calendar', label: 'Calendar' },
   { href: '/knockout', label: 'Knockout' },
+  { href: '/players', label: 'Players' },
+  { href: '/scorers', label: 'Top Scorers' },
   { href: '/settings', label: 'Settings' },
 ];
 

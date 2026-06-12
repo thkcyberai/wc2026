@@ -12,6 +12,8 @@ import type Database from 'better-sqlite3';
 import { recalculateStandings } from './standings';
 import { resolveKnockout } from './knockout';
 import { explainError, mapTeamNames, openAiAvailable } from './openaiClient';
+import { apiFootballAvailable } from './apiFootball';
+import { loadSquads, syncFdScorers, syncMatchEvents } from './players';
 import type { RefreshResult } from './types';
 
 interface SourceFixture {
@@ -256,6 +258,23 @@ export async function runRefresh(db: Database.Database): Promise<RefreshResult> 
   // Always recalculate from whatever is in the DB (manual edits included)
   recalculateStandings(db);
   const knockoutSlotsResolved = resolveKnockout(db);
+
+  // Players / events / scorer data (best-effort, never fails the refresh)
+  const extras: string[] = [];
+  try {
+    if (apiFootballAvailable()) {
+      const playerCount = (db.prepare('SELECT COUNT(*) AS n FROM players').get() as { n: number }).n;
+      if (playerCount < 1000) {
+        const squads = await loadSquads(db);
+        extras.push(squads.message);
+      }
+      extras.push(await syncMatchEvents(db));
+    }
+    await syncFdScorers(db);
+  } catch (e) {
+    extras.push(`players/events: ${(e as Error).message}`);
+  }
+  if (extras.length) message += ` ${extras.join(' · ')}`;
 
   let friendlyError: string | undefined;
   if (!ok && openAiAvailable()) {

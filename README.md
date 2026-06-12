@@ -32,6 +32,7 @@ Then edit `.env`:
 | `OPENAI_API_KEY` | Normalizes fetched fixture data (team-name mapping like "Korea Republic" → "South Korea", venue/status standardization) and explains refresh errors in plain language. **Never used as a score source.** Server-side only — never sent to the browser. |
 | `OPENAI_MODEL` | Optional, defaults to `gpt-4o-mini`. |
 | `FOOTBALL_DATA_API_KEY` | Recommended. Free key from [football-data.org](https://www.football-data.org) — the primary official score source (FIFA World Cup, competition `2000`). Without it, refresh falls back to the public [openfootball](https://github.com/openfootball) dataset (best-effort). |
+| `API_FOOTBALL_KEY` | Recommended. Free key from [dashboard.api-sports.io](https://dashboard.api-sports.io) (100 req/day) — enables the Players tab (48 squads × 26 players with photos), goalscorer/card events on match cards, and photos in the Top Scorers ranking. Without it, the scorer ranking falls back to football-data.org (names only). |
 
 Restart `npm run dev` after editing `.env`.
 
@@ -66,6 +67,8 @@ schtasks /create /tn "WC2026 Refresh" /tr "cmd /c cd /d C:\products\WC2026 && np
 | **Groups** | All 12 group tables (Pos · P · W · D · L · GF · GA · GD · Pts · qualification status). Top 2 qualify + 8 best thirds. |
 | **Calendar** | All 104 match cards grouped by day — match number, stage, teams, venue, city, country, score, status, and kickoff in venue / Lisboa (`Europe/Lisbon`) / Colorado (`America/Denver`) / Brasil (`America/Sao_Paulo`) time. Filters: team, group, venue, stage, date, country + free-text search. |
 | **Knockout** | Full bracket — Round of 32 → Round of 16 → Quarter-finals → Semi-finals → Third place → Final. Placeholders like *Winner Group A* or *Third place Group C/E/F/H/I* are replaced automatically as results arrive. |
+| **Players** | All 48 national squads (26 players each) with photos, shirt numbers and positions, grouped by GK/DEF/MID/ATT. First use: press "Load all 48 squads" (≈49 API-Football calls). |
+| **Top Scorers** | Goal ranking (≥1 goal), most goals first, with player photo, name, flag, team and goal count. Sourced from match events; penalties count, own goals don't. |
 | **Settings** | Data-source status, refresh button, refresh history log |
 
 ## 🗃️ Database (SQLite, `data/wc2026.db`)
