@@ -10,7 +10,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Database not seeded. Run: npm run seed' }, { status: 503 });
     }
     const db = getDb();
-    const teamCode = req.nextUrl.searchParams.get('team');
+    // FIFA trigrams only — anything else is treated as "no team selected"
+    const raw = req.nextUrl.searchParams.get('team') ?? '';
+    const teamCode = /^[A-Z]{3}$/.test(raw) ? raw : null;
 
     const teams = db.prepare(`
       SELECT t.id, t.code, t.name, t.group_letter,

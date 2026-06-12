@@ -93,8 +93,13 @@ schtasks /create /tn "WC2026 Refresh" /tr "cmd /c cd /d C:\products\WC2026 && np
 
 ## 🔐 Security notes
 
-- `OPENAI_API_KEY` is read only in server code (`src/lib/openaiClient.ts`); all OpenAI calls happen in API routes / scripts, never in the browser.
-- All fetched data is validated (integer score bounds, status whitelist, canonical team matching) before being written to SQLite.
+- **Secrets server-side only** — `OPENAI_API_KEY`, `FOOTBALL_DATA_API_KEY` and `API_FOOTBALL_KEY` are read exclusively in server code; nothing is exposed to the browser.
+- **Security headers on every response** (`next.config.mjs`): Content-Security-Policy (scripts only from own origin; images only from self + the two trusted CDNs; `frame-ancestors 'none'` against clickjacking), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, HSTS, `poweredByHeader` disabled.
+- **Rate limiting** (`src/middleware.ts`): per-IP sliding window on all `/api` routes — 120 reads/min, 5 writes/min — plus endpoint-level cooldowns (refresh: 1/min globally, squad load: 1/10 min).
+- **CSRF protection**: state-changing requests are rejected when their `Origin` / `Sec-Fetch-Site` indicates another site.
+- **Input validation**: all query parameters are length-capped and whitelisted (groups A–L, known stages/countries, ISO dates, FIFA trigrams); every SQL statement is parameterized — no string-built SQL anywhere.
+- **Data validation on ingest**: integer score bounds, status whitelist, canonical team matching; finished matches can never be downgraded by bad source data.
+- **Error hygiene**: API responses return generic messages; details go to the server log only.
 - API failures degrade gracefully: the app keeps serving the last good local data.
 
 ## 🛠️ Troubleshooting

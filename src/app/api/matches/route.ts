@@ -9,14 +9,18 @@ export async function GET(req: NextRequest) {
     if (!isSeeded()) {
       return NextResponse.json({ error: 'Database not seeded. Run: npm run seed' }, { status: 503 });
     }
+    // sanitize: cap lengths and whitelist where possible (defense in depth —
+    // these values are only used in in-memory filters, never in SQL)
     const p = req.nextUrl.searchParams;
-    const team = p.get('team')?.toLowerCase() ?? '';
-    const group = p.get('group') ?? '';
-    const venue = p.get('venue') ?? '';
-    const stage = p.get('stage') ?? '';
-    const date = p.get('date') ?? '';
-    const country = p.get('country') ?? '';
-    const q = p.get('q')?.toLowerCase() ?? '';
+    const cap = (v: string | null, n = 60) => (v ?? '').slice(0, n);
+    const team = cap(p.get('team')).toLowerCase();
+    const group = /^[A-L]$/.test(cap(p.get('group'), 1)) ? cap(p.get('group'), 1) : '';
+    const venue = cap(p.get('venue'), 10);
+    const stage = ['GROUP', 'R32', 'R16', 'QF', 'SF', 'THIRD', 'FINAL'].includes(cap(p.get('stage'), 10))
+      ? cap(p.get('stage'), 10) : '';
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(cap(p.get('date'), 10)) ? cap(p.get('date'), 10) : '';
+    const country = ['USA', 'Canada', 'Mexico'].includes(cap(p.get('country'), 10)) ? cap(p.get('country'), 10) : '';
+    const q = cap(p.get('q'), 100).toLowerCase();
 
     let matches = getAllMatches();
     if (team) {
