@@ -10,6 +10,33 @@ const DB_PATH =
 declare global {
   // eslint-disable-next-line no-var
   var __wc2026db: Database.Database | undefined;
+  // eslint-disable-next-line no-var
+  var __wc2026AutoRefresh: boolean | undefined;
+}
+
+/**
+ * In production (AUTO_REFRESH=true), refresh scores automatically on a
+ * schedule. Started lazily on first DB access (every API route hits this),
+ * guarded so it only ever starts once per process.
+ */
+function maybeStartAutoRefresh(db: Database.Database) {
+  if (global.__wc2026AutoRefresh) return;
+  if (process.env.AUTO_REFRESH !== 'true') return;
+  global.__wc2026AutoRefresh = true;
+
+  const hours = Number(process.env.AUTO_REFRESH_HOURS || '6');
+  const tick = async () => {
+    try {
+      const { runRefresh } = await import('./refresh');
+      const result = await runRefresh(db);
+      console.log(`[auto-refresh] ${result.ok ? 'ok' : 'failed'} — ${result.message}`);
+    } catch (err) {
+      console.error('[auto-refresh] error:', err);
+    }
+  };
+  setTimeout(tick, 30_000);
+  setInterval(tick, hours * 60 * 60 * 1000);
+  console.log(`[auto-refresh] enabled — every ${hours}h`);
 }
 
 export function getDb(): Database.Database {
@@ -30,6 +57,7 @@ export function getDb(): Database.Database {
     seedDatabase(db);
     console.log('[db] empty database detected — seeded full WC2026 structure');
   }
+  maybeStartAutoRefresh(db);
   return db;
 }
 
