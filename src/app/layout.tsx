@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import TabNav from '@/components/TabNav';
 
@@ -10,6 +11,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        {/* Plausible Analytics — privacy-friendly, no cookies */}
+        <Script
+          async
+          src="https://plausible.io/js/pa-tkC-Ft_PVtjiSRmASrcED.js"
+          strategy="afterInteractive"
+        />
+        <Script id="plausible-init" strategy="afterInteractive">
+          {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init();`}
+        </Script>
+      </head>
       <body className="min-h-screen">
         <header className="sticky top-0 z-40 border-b border-white/10 bg-pitch-950/85 backdrop-blur">
           <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">

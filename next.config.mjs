@@ -8,11 +8,11 @@
 // - frame-ancestors 'none': nobody can embed the site (clickjacking).
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https://flagcdn.com https://media.api-sports.io https://media-1.api-sports.io https://media-2.api-sports.io https://media-3.api-sports.io",
   "font-src 'self' data:",
-  "connect-src 'self' ws: wss:", // ws for Next.js dev hot-reload; no third-party HTTP allowed
+  "connect-src 'self' ws: wss: https://plausible.io", // ws for dev hot-reload; plausible for analytics events
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
