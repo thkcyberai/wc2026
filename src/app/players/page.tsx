@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Flag from '@/components/Flag';
 import PlayerPhoto from '@/components/PlayerPhoto';
 import { ErrorBox, Loading } from '@/components/ui';
+import { useI18n } from '@/components/LanguageProvider';
 import type { Player } from '@/lib/types';
 
 interface TeamRow {
@@ -15,12 +16,13 @@ interface PlayersData {
   totalPlayers: number;
 }
 
-const POSITION_LABELS: Record<string, string> = {
-  Goalkeeper: 'Goalkeepers', Defender: 'Defenders',
-  Midfielder: 'Midfielders', Attacker: 'Attackers',
+const POSITION_KEYS: Record<string, string> = {
+  Goalkeeper: 'pos.gk', Defender: 'pos.def',
+  Midfielder: 'pos.mid', Attacker: 'pos.att',
 };
 
 export default function PlayersPage() {
+  const { t } = useI18n();
   const [team, setTeam] = useState<string>('');
   const [data, setData] = useState<PlayersData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,31 +71,28 @@ export default function PlayersPage() {
     }
   }
 
-  if (loading && !data) return <Loading label="Loading squads…" />;
+  if (loading && !data) return <Loading />;
   if (error || !data) return <ErrorBox message={error ?? 'No data'} onRetry={() => fetchData(team)} />;
 
-  const selected = data.teams.find((t) => t.code === team);
+  const selected = data.teams.find((x) => x.code === team);
   const byPosition = new Map<string, Player[]>();
   for (const p of data.players) {
-    const key = POSITION_LABELS[p.position ?? ''] ?? 'Others';
+    const key = POSITION_KEYS[p.position ?? ''] ?? 'pos.other';
     const list = byPosition.get(key) ?? [];
     list.push(p);
     byPosition.set(key, list);
   }
-  const sections = ['Goalkeepers', 'Defenders', 'Midfielders', 'Attackers', 'Others']
+  const sections = ['pos.gk', 'pos.def', 'pos.mid', 'pos.att', 'pos.other']
     .filter((s) => byPosition.has(s));
 
   return (
     <div className="space-y-6">
       {data.totalPlayers === 0 && (
         <div className="card space-y-3 p-5">
-          <h2 className="font-bold">No squads loaded yet</h2>
-          <p className="text-sm text-zinc-400">
-            Squad data hasn&apos;t been imported yet. Press the button below to load the 48 national
-            squads — it can take a minute.
-          </p>
+          <h2 className="font-bold">{t('pl.none')}</h2>
+          <p className="text-sm text-zinc-400">{t('pl.noneDesc')}</p>
           <button className="btn-primary" onClick={loadSquads} disabled={loadingSquads}>
-            {loadingSquads ? 'Loading squads… (can take a minute)' : '⬇️ Load squads'}
+            {loadingSquads ? t('pl.loading') : t('pl.load')}
           </button>
           {loadMsg && <p className="text-[12px] text-gold">{loadMsg}</p>}
         </div>
@@ -122,22 +121,20 @@ export default function PlayersPage() {
         <div className="flex items-center gap-3">
           <Flag code={selected.code} name={selected.name} size="md" />
           <h2 className="text-xl font-extrabold">{selected.name}</h2>
-          <span className="chip bg-white/10 text-zinc-300">Group {selected.group_letter}</span>
-          <span className="text-[12px] text-zinc-500">{data.players.length} players</span>
+          <span className="chip bg-white/10 text-zinc-300">{t('group.word')} {selected.group_letter}</span>
+          <span className="text-[12px] text-zinc-500">{t('pl.count', { n: data.players.length })}</span>
         </div>
       )}
 
-      {loading && <Loading label="Loading players…" />}
+      {loading && <Loading />}
 
       {!loading && selected && data.players.length === 0 && data.totalPlayers > 0 && (
-        <p className="card p-5 text-sm text-zinc-500">
-          No squad loaded for {selected.name} yet — run a refresh or the squad loader to top it up.
-        </p>
+        <p className="card p-5 text-sm text-zinc-500">{t('pl.empty', { team: selected.name })}</p>
       )}
 
       {!loading && sections.map((section) => (
         <section key={section}>
-          <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-zinc-400">{section}</h3>
+          <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-zinc-400">{t(section)}</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {byPosition.get(section)!.map((p) => (
               <div key={p.id} className="card flex flex-col items-center gap-2 p-4 text-center">

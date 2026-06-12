@@ -4,21 +4,14 @@ import { useMemo, useState } from 'react';
 import MatchCard from '@/components/MatchCard';
 import { ErrorBox, Loading } from '@/components/ui';
 import { useFetch } from '@/components/useFetch';
+import { useI18n } from '@/components/LanguageProvider';
 import type { MatchView } from '@/lib/types';
 
-const STAGES = [
-  { value: '', label: 'All stages' },
-  { value: 'GROUP', label: 'Group stage' },
-  { value: 'R32', label: 'Round of 32' },
-  { value: 'R16', label: 'Round of 16' },
-  { value: 'QF', label: 'Quarter-finals' },
-  { value: 'SF', label: 'Semi-finals' },
-  { value: 'THIRD', label: 'Third-place match' },
-  { value: 'FINAL', label: 'Final' },
-];
+const STAGE_VALUES = ['GROUP', 'R32', 'R16', 'QF', 'SF', 'THIRD', 'FINAL'];
 
 export default function CalendarPage() {
   const { data, loading, error, reload } = useFetch<{ matches: MatchView[] }>('/api/matches');
+  const { t, locale } = useI18n();
 
   const [q, setQ] = useState('');
   const [team, setTeam] = useState('');
@@ -81,7 +74,7 @@ export default function CalendarPage() {
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [filtered]);
 
-  if (loading) return <Loading label="Loading all 104 matches…" />;
+  if (loading) return <Loading />;
   if (error || !data) return <ErrorBox message={error ?? 'No data'} onRetry={reload} />;
 
   const reset = () => {
@@ -93,42 +86,43 @@ export default function CalendarPage() {
       <div className="card space-y-3 p-4">
         <input
           className="input w-full"
-          placeholder="🔍 Search team, venue, city, stage, match number…"
+          placeholder={t('cal.search')}
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <select className="input" value={team} onChange={(e) => setTeam(e.target.value)}>
-            <option value="">All teams</option>
+            <option value="">{t('cal.teams')}</option>
             {teams.map(([code, name]) => (
               <option key={code} value={code}>{name}</option>
             ))}
           </select>
           <select className="input" value={group} onChange={(e) => setGroup(e.target.value)}>
-            <option value="">All groups</option>
+            <option value="">{t('cal.groups')}</option>
             {'ABCDEFGHIJKL'.split('').map((g) => (
-              <option key={g} value={g}>Group {g}</option>
+              <option key={g} value={g}>{t('group.word')} {g}</option>
             ))}
           </select>
           <select className="input" value={venue} onChange={(e) => setVenue(e.target.value)}>
-            <option value="">All venues</option>
+            <option value="">{t('cal.venues')}</option>
             {venues.map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
             ))}
           </select>
           <select className="input" value={stage} onChange={(e) => setStage(e.target.value)}>
-            {STAGES.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
+            <option value="">{t('cal.stages')}</option>
+            {STAGE_VALUES.map((s) => (
+              <option key={s} value={s}>{t(`stage.${s}`)}</option>
             ))}
           </select>
           <select className="input" value={date} onChange={(e) => setDate(e.target.value)}>
-            <option value="">All dates</option>
+            <option value="">{t('cal.dates')}</option>
             {dates.map((d) => (
               <option key={d} value={d}>{d}</option>
             ))}
           </select>
           <select className="input" value={country} onChange={(e) => setCountry(e.target.value)}>
-            <option value="">All countries</option>
+            <option value="">{t('cal.countries')}</option>
             <option value="USA">USA</option>
             <option value="Canada">Canada</option>
             <option value="Mexico">Mexico</option>
@@ -136,21 +130,21 @@ export default function CalendarPage() {
         </div>
         <div className="flex items-center justify-between text-[12px] text-zinc-400">
           <span>
-            {filtered.length} of {all.length} matches
-            {filtered.some((m) => !m.time_confirmed) && ' · * kickoff time provisional'}
+            {t('cal.count', { a: filtered.length, b: all.length })}
+            {filtered.some((m) => !m.time_confirmed) && t('cal.prov')}
           </span>
-          <button className="text-accent hover:underline" onClick={reset}>Clear filters</button>
+          <button className="text-accent hover:underline" onClick={reset}>{t('cal.clear')}</button>
         </div>
       </div>
 
       {byDate.length === 0 && (
-        <p className="card p-6 text-center text-sm text-zinc-500">No matches found for these filters.</p>
+        <p className="card p-6 text-center text-sm text-zinc-500">{t('cal.none')}</p>
       )}
 
       {byDate.map(([d, matches]) => (
         <section key={d}>
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-zinc-400">
-            {new Date(`${d}T12:00:00`).toLocaleDateString('en-US', {
+            {new Date(`${d}T12:00:00`).toLocaleDateString(locale, {
               weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
             })}
           </h2>

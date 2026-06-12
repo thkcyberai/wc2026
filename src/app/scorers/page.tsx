@@ -4,6 +4,7 @@ import Flag from '@/components/Flag';
 import PlayerPhoto from '@/components/PlayerPhoto';
 import { ErrorBox, Loading } from '@/components/ui';
 import { useFetch } from '@/components/useFetch';
+import { useI18n } from '@/components/LanguageProvider';
 
 interface ScorerRow {
   rank: number;
@@ -16,8 +17,9 @@ interface ScorerRow {
 
 export default function ScorersPage() {
   const { data, loading, error, reload } = useFetch<{ source: string; scorers: ScorerRow[] }>('/api/scorers');
+  const { t } = useI18n();
 
-  if (loading) return <Loading label="Loading goal ranking…" />;
+  if (loading) return <Loading />;
   if (error || !data) return <ErrorBox message={error ?? 'No data'} onRetry={reload} />;
 
   const max = data.scorers[0]?.goals ?? 1;
@@ -25,15 +27,12 @@ export default function ScorersPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-xl font-extrabold">⚽ Top Scorers</h2>
-        <span className="text-[11px] text-zinc-500">source: {data.source}</span>
+        <h2 className="text-xl font-extrabold">{t('sc.title')}</h2>
+        <span className="text-[11px] text-zinc-500">{t('sc.src')}: {data.source}</span>
       </div>
 
       {data.scorers.length === 0 ? (
-        <p className="card p-6 text-sm text-zinc-500">
-          No goals recorded yet — the ranking fills up automatically as matches finish and data
-          refreshes. (Player photos require squads to be loaded on the Players tab.)
-        </p>
+        <p className="card p-6 text-sm text-zinc-500">{t('sc.empty')}</p>
       ) : (
         <div className="card divide-y divide-white/5">
           {data.scorers.map((s) => (

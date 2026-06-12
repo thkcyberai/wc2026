@@ -5,6 +5,7 @@ import MatchCard from '@/components/MatchCard';
 import RefreshButton from '@/components/RefreshButton';
 import { ErrorBox, Loading } from '@/components/ui';
 import { useFetch } from '@/components/useFetch';
+import { useI18n } from '@/components/LanguageProvider';
 import type { MatchView } from '@/lib/types';
 
 interface DashboardData {
@@ -35,35 +36,40 @@ function Section({ title, matches, empty }: { title: string; matches: MatchView[
 
 export default function DashboardPage() {
   const { data, loading, error, reload } = useFetch<DashboardData>('/api/dashboard');
+  const { t, locale } = useI18n();
 
-  if (loading) return <Loading label="Loading dashboard…" />;
+  if (loading) return <Loading />;
   if (error || !data) return <ErrorBox message={error ?? 'No data'} onRetry={reload} />;
+
+  const prettyToday = new Date().toLocaleDateString(locale, {
+    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+  });
 
   return (
     <div className="space-y-8">
       <div className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-extrabold">{data.meta.prettyToday}</h2>
+          <h2 className="text-xl font-extrabold">{prettyToday}</h2>
           <p className="mt-1 text-[12px] text-zinc-400">
             {data.meta.lastRefresh
-              ? `Last updated: ${new Date(data.meta.lastRefresh.ran_at).toLocaleString()}`
-              : 'Schedule loaded — first score update pending.'}
+              ? `${t('dash.lastUpdated')} ${new Date(data.meta.lastRefresh.ran_at).toLocaleString(locale)}`
+              : t('dash.pending')}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <RefreshButton onDone={reload} />
-          <Link href="/groups" className="btn-ghost">View Groups</Link>
-          <Link href="/calendar" className="btn-ghost">View Calendar</Link>
-          <Link href="/knockout" className="btn-ghost">View Bracket</Link>
+          <Link href="/groups" className="btn-ghost">{t('dash.viewGroups')}</Link>
+          <Link href="/calendar" className="btn-ghost">{t('dash.viewCalendar')}</Link>
+          <Link href="/knockout" className="btn-ghost">{t('dash.viewBracket')}</Link>
         </div>
       </div>
 
       {data.live.length > 0 && (
-        <Section title="🔴 Live now" matches={data.live} empty="" />
+        <Section title={t('dash.live')} matches={data.live} empty="" />
       )}
-      <Section title="Today's matches" matches={data.todays} empty="No matches today." />
-      <Section title="Latest results" matches={data.latest} empty="No finished matches yet." />
-      <Section title="Next up" matches={data.upcoming} empty="No upcoming matches." />
+      <Section title={t('dash.today')} matches={data.todays} empty={t('dash.noToday')} />
+      <Section title={t('dash.latest')} matches={data.latest} empty={t('dash.noFin')} />
+      <Section title={t('dash.next')} matches={data.upcoming} empty={t('dash.noUp')} />
     </div>
   );
 }

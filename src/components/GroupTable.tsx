@@ -3,16 +3,18 @@
 import type { GroupView } from '@/lib/types';
 import { QualBadge } from './ui';
 import Flag from './Flag';
+import { useI18n } from './LanguageProvider';
 
 export default function GroupTable({ group }: { group: GroupView }) {
+  const { t } = useI18n();
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5">
         <h3 className="font-bold">
-          Group <span className="text-accent">{group.letter}</span>
+          {t('group.word')} <span className="text-accent">{group.letter}</span>
         </h3>
         <span className="text-[11px] text-zinc-400">
-          {group.complete ? 'Complete' : 'In progress'}
+          {group.complete ? t('group.complete') : t('group.progress')}
         </span>
       </div>
       <div className="overflow-x-auto">
@@ -20,16 +22,16 @@ export default function GroupTable({ group }: { group: GroupView }) {
           <thead>
             <tr className="text-left text-[11px] uppercase tracking-wide text-zinc-500">
               <th className="px-3 py-2">#</th>
-              <th className="px-3 py-2">Team</th>
-              <th className="px-2 py-2 text-center" title="Played">P</th>
-              <th className="px-2 py-2 text-center" title="Won">W</th>
-              <th className="px-2 py-2 text-center" title="Drawn">D</th>
-              <th className="px-2 py-2 text-center" title="Lost">L</th>
-              <th className="px-2 py-2 text-center" title="Goals for">GF</th>
-              <th className="px-2 py-2 text-center" title="Goals against">GA</th>
-              <th className="px-2 py-2 text-center" title="Goal difference">GD</th>
-              <th className="px-2 py-2 text-center" title="Points">Pts</th>
-              <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2">{t('tbl.team')}</th>
+              <th className="px-2 py-2 text-center">{t('tbl.p')}</th>
+              <th className="px-2 py-2 text-center">{t('tbl.w')}</th>
+              <th className="px-2 py-2 text-center">{t('tbl.d')}</th>
+              <th className="px-2 py-2 text-center">{t('tbl.l')}</th>
+              <th className="px-2 py-2 text-center">{t('tbl.gf')}</th>
+              <th className="px-2 py-2 text-center">{t('tbl.ga')}</th>
+              <th className="px-2 py-2 text-center">{t('tbl.gd')}</th>
+              <th className="px-2 py-2 text-center">{t('tbl.pts')}</th>
+              <th className="px-3 py-2">{t('tbl.status')}</th>
             </tr>
           </thead>
           <tbody>

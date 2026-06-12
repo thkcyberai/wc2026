@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 import './globals.css';
 import TabNav from '@/components/TabNav';
+import { LanguageProvider, LanguageSwitcher } from '@/components/LanguageProvider';
+import { FooterBar, HeaderSubtitle } from '@/components/SiteChrome';
 
 export const metadata: Metadata = {
   title: 'WC2026 Calendar Tracker',
@@ -23,45 +25,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Script>
       </head>
       <body className="min-h-screen">
-        <header className="sticky top-0 z-40 border-b border-white/10 bg-pitch-950/85 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl" aria-hidden>⚽</span>
-              <div>
-                <h1 className="text-lg font-extrabold tracking-tight">
-                  WC2026 <span className="text-accent">Calendar Tracker</span>
-                </h1>
-                <p className="text-[11px] text-zinc-400">
-                  FIFA World Cup 2026 · USA · Canada · Mexico · Jun 11 – Jul 19
-                </p>
+        <LanguageProvider>
+          <header className="sticky top-0 z-40 border-b border-white/10 bg-pitch-950/85 backdrop-blur">
+            <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl" aria-hidden>⚽</span>
+                  <div>
+                    <h1 className="text-lg font-extrabold tracking-tight">
+                      WC2026 <span className="text-accent">Calendar Tracker</span>
+                    </h1>
+                    <HeaderSubtitle />
+                  </div>
+                </div>
+                <div className="lg:hidden">
+                  <LanguageSwitcher />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <TabNav />
+                <div className="hidden lg:block">
+                  <LanguageSwitcher />
+                </div>
               </div>
             </div>
-            <TabNav />
-          </div>
-        </header>
-        <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
-        <footer className="mx-auto max-w-6xl space-y-1 px-4 pb-8 text-center text-[11px] text-zinc-500">
-          <p className="font-semibold text-zinc-400">
-            All rights reserved by{' '}
-            <a
-              href="https://facti.ai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-accent hover:underline"
-            >
-              Facti.ai
-            </a>
-          </p>
-          <p>
-            💬 Feedback &amp; contact:{' '}
-            <a
-              href="mailto:contact@facti.ai?subject=WC2026%20Calendar%20Tracker%20feedback"
-              className="text-accent hover:underline"
-            >
-              contact@facti.ai
-            </a>
-          </p>
-        </footer>
+          </header>
+          <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+          <FooterBar />
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import type { MatchEvent, MatchView } from '@/lib/types';
 import { StatusChip } from './ui';
 import Flag from './Flag';
+import { useI18n } from './LanguageProvider';
 
 function eventIcon(type: MatchEvent['type']): string {
   switch (type) {
@@ -52,6 +53,11 @@ function TeamLabel({
 }
 
 export default function MatchCard({ match, compact = false }: { match: MatchView; compact?: boolean }) {
+  const { t } = useI18n();
+  const stageLabel =
+    match.stage === 'GROUP' && match.group_letter
+      ? `${t('group.word')} ${match.group_letter}`
+      : t(`stage.${match.stage}`);
   const hasScore = match.home_score !== null && match.away_score !== null;
   const pens =
     match.home_penalties !== null && match.away_penalties !== null
@@ -62,7 +68,7 @@ export default function MatchCard({ match, compact = false }: { match: MatchView
     <div className="card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-400">
         <span className="font-semibold uppercase tracking-wide text-zinc-300">
-          Match {match.id} · {match.stage_label}
+          {t('match.word')} {match.id} · {stageLabel}
         </span>
         <StatusChip status={match.status} />
       </div>
@@ -84,7 +90,7 @@ export default function MatchCard({ match, compact = false }: { match: MatchView
             <div className="text-sm font-semibold text-zinc-400">
               {match.times.venue}
               {!match.time_confirmed && <span title="kickoff time provisional">*</span>}
-              <div className="text-[10px] font-normal text-zinc-500">venue time</div>
+              <div className="text-[10px] font-normal text-zinc-500">{t('match.venueTime')}</div>
             </div>
           )}
         </div>

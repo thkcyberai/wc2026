@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useI18n } from './LanguageProvider';
 
 interface PublicRefreshResult {
   ok: boolean;
@@ -10,6 +11,7 @@ interface PublicRefreshResult {
 }
 
 export default function RefreshButton({ onDone }: { onDone?: () => void }) {
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<PublicRefreshResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,14 +39,16 @@ export default function RefreshButton({ onDone }: { onDone?: () => void }) {
         {busy ? (
           <>
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-pitch-950/40 border-t-pitch-950" />
-            Refreshing…
+            {t('refresh.busy')}
           </>
         ) : (
-          <>🔄 Refresh Data</>
+          <>{t('refresh.btn')}</>
         )}
       </button>
       {result && (
-        <p className={`text-[12px] ${result.ok ? 'text-accent' : 'text-gold'}`}>{result.message}</p>
+        <p className={`text-[12px] ${result.ok ? 'text-accent' : 'text-gold'}`}>
+          {result.ok ? t('refresh.ok', { n: result.matchesUpdated }) : t('refresh.fail')}
+        </p>
       )}
       {error && <p className="text-[12px] text-red-300">{error}</p>}
     </div>

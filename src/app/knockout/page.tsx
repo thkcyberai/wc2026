@@ -3,6 +3,7 @@
 import { ErrorBox, Loading, StatusChip } from '@/components/ui';
 import { useFetch } from '@/components/useFetch';
 import Flag from '@/components/Flag';
+import { useI18n } from '@/components/LanguageProvider';
 import type { MatchView } from '@/lib/types';
 
 interface KnockoutData {
@@ -85,31 +86,28 @@ function Round({ title, matches }: { title: string; matches: MatchView[] }) {
 
 export default function KnockoutPage() {
   const { data, loading, error, reload } = useFetch<KnockoutData>('/api/knockout');
+  const { t } = useI18n();
 
-  if (loading) return <Loading label="Loading knockout bracket…" />;
+  if (loading) return <Loading />;
   if (error || !data) return <ErrorBox message={error ?? 'No data'} onRetry={reload} />;
 
   return (
     <div className="space-y-6">
-      <div className="card p-4 text-[13px] text-zinc-400">
-        Placeholders (e.g. <em>Winner Group A</em>, <em>Third place Group C/E/F/H/I</em>) are replaced
-        automatically with real teams as groups finish and results come in via{' '}
-        <span className="text-zinc-200">Refresh Data</span>.
-      </div>
+      <div className="card p-4 text-[13px] text-zinc-400">{t('ko.banner')}</div>
 
       <div className="overflow-x-auto pb-2">
         <div className="flex min-w-[1500px] gap-4">
-          <Round title="Round of 32 · Jun 28 – Jul 3" matches={data.r32} />
-          <Round title="Round of 16 · Jul 4 – 7" matches={data.r16} />
-          <Round title="Quarter-finals · Jul 9 – 11" matches={data.qf} />
-          <Round title="Semi-finals · Jul 14 – 15" matches={data.sf} />
+          <Round title={t('ko.r32')} matches={data.r32} />
+          <Round title={t('ko.r16')} matches={data.r16} />
+          <Round title={t('ko.qf')} matches={data.qf} />
+          <Round title={t('ko.sf')} matches={data.sf} />
           <div className="min-w-[230px] flex-1 space-y-6">
-            <Round title="Final · Jul 19 · New York/NJ" matches={data.final} />
-            <Round title="Third place · Jul 18 · Miami" matches={data.third} />
+            <Round title={t('ko.final')} matches={data.final} />
+            <Round title={t('ko.third')} matches={data.third} />
           </div>
         </div>
       </div>
-      <p className="text-[11px] text-zinc-500">* kickoff time provisional · scroll horizontally to see the full bracket</p>
+      <p className="text-[11px] text-zinc-500">{t('ko.note')}</p>
     </div>
   );
 }
