@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, isSeeded } from '@/lib/db';
-import { apiFootballAvailable } from '@/lib/apiFootball';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,10 +33,7 @@ export async function GET(req: NextRequest) {
     }
 
     const total = (db.prepare('SELECT COUNT(*) AS n FROM players').get() as { n: number }).n;
-    return NextResponse.json({
-      teams, players, totalPlayers: total,
-      apiFootballConfigured: apiFootballAvailable(),
-    });
+    return NextResponse.json({ teams, players, totalPlayers: total });
   } catch (err) {
     console.error('[api/players]', err);
     return NextResponse.json({ error: 'Failed to load players.' }, { status: 500 });

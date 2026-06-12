@@ -288,11 +288,11 @@ export function getTopScorers(db: Database.Database): { source: string; scorers:
       };
     });
 
-  if (fromEvents.length) return { source: 'match events (API-Football)', scorers: decorate(fromEvents) };
+  if (fromEvents.length) return { source: 'live match events', scorers: decorate(fromEvents) };
 
   const fallback = db.prepare(`
     SELECT player_name, team_id, goals FROM fd_scorers
     WHERE goals >= 1 ORDER BY goals DESC, player_name ASC
   `).all() as { player_name: string; team_id: number | null; goals: number }[];
-  return { source: 'football-data.org top scorers', scorers: decorate(fallback) };
+  return { source: 'official scorer feed', scorers: decorate(fallback) };
 }

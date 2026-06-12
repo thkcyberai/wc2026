@@ -13,7 +13,7 @@ interface DashboardData {
   live: MatchView[];
   latest: MatchView[];
   upcoming: MatchView[];
-  meta: { lastRefresh: { ran_at: string; source: string } | null; prettyToday: string };
+  meta: { lastRefresh: { ran_at: string } | null; prettyToday: string };
 }
 
 function Section({ title, matches, empty }: { title: string; matches: MatchView[]; empty: string }) {
@@ -46,8 +46,8 @@ export default function DashboardPage() {
           <h2 className="text-xl font-extrabold">{data.meta.prettyToday}</h2>
           <p className="mt-1 text-[12px] text-zinc-400">
             {data.meta.lastRefresh
-              ? `Last updated: ${new Date(data.meta.lastRefresh.ran_at).toLocaleString()} (${data.meta.lastRefresh.source})`
-              : 'Not refreshed yet — using seeded data.'}
+              ? `Last updated: ${new Date(data.meta.lastRefresh.ran_at).toLocaleString()}`
+              : 'Schedule loaded — first score update pending.'}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

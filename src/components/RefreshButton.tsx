@@ -1,11 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import type { RefreshResult } from '@/lib/types';
+
+interface PublicRefreshResult {
+  ok: boolean;
+  matchesUpdated: number;
+  ranAt: string;
+  message: string;
+}
 
 export default function RefreshButton({ onDone }: { onDone?: () => void }) {
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<RefreshResult | null>(null);
+  const [result, setResult] = useState<PublicRefreshResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function refresh() {
@@ -15,8 +21,8 @@ export default function RefreshButton({ onDone }: { onDone?: () => void }) {
     try {
       const res = await fetch('/api/refresh', { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      setResult(data as RefreshResult);
+      if (!res.ok) throw new Error(data.error || 'Refresh is unavailable right now.');
+      setResult(data as PublicRefreshResult);
       onDone?.();
     } catch (e) {
       setError((e as Error).message);
@@ -38,11 +44,7 @@ export default function RefreshButton({ onDone }: { onDone?: () => void }) {
         )}
       </button>
       {result && (
-        <p className={`text-[12px] ${result.ok ? 'text-accent' : 'text-gold'}`}>
-          {result.ok
-            ? `Updated ${result.matchesUpdated} matches from ${result.source}. Standings & bracket recalculated.`
-            : result.friendlyError || result.message}
-        </p>
+        <p className={`text-[12px] ${result.ok ? 'text-accent' : 'text-gold'}`}>{result.message}</p>
       )}
       {error && <p className="text-[12px] text-red-300">{error}</p>}
     </div>

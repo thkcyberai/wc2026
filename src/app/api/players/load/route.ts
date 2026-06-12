@@ -22,7 +22,17 @@ export async function POST() {
     }
     lastLoadAt = now;
     const result = await loadSquads(getDb());
-    return NextResponse.json(result, { status: result.ok ? 200 : 502 });
+    // details (providers, quotas, errors) go to server logs only
+    console.log('[squads]', result.message);
+    return NextResponse.json(
+      {
+        ok: result.ok,
+        message: result.ok
+          ? 'Squad data updated.'
+          : 'Squad data is not available right now — please try again later.',
+      },
+      { status: result.ok ? 200 : 502 }
+    );
   } catch (err) {
     console.error('[api/players/load]', err);
     return NextResponse.json({ error: 'Squad load failed unexpectedly.' }, { status: 500 });

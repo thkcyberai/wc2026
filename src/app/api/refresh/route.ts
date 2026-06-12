@@ -23,7 +23,16 @@ export async function POST() {
       return NextResponse.json({ error: 'Database not seeded. Run: npm run seed' }, { status: 503 });
     }
     const result = await runRefresh(getDb());
-    return NextResponse.json(result);
+    // full details (providers, errors, quotas) go to server logs only
+    console.log('[refresh]', result.message);
+    return NextResponse.json({
+      ok: result.ok,
+      matchesUpdated: result.matchesUpdated,
+      ranAt: result.ranAt,
+      message: result.ok
+        ? `Updated ${result.matchesUpdated} match${result.matchesUpdated === 1 ? '' : 'es'}. Standings & bracket recalculated.`
+        : 'Could not fetch new data right now — showing the latest saved results. Try again later.',
+    });
   } catch (err) {
     console.error('[api/refresh]', err);
     return NextResponse.json(

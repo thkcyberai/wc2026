@@ -1,25 +1,42 @@
 import { NextResponse } from 'next/server';
 import { getMeta, getRefreshLogs } from '@/lib/queries';
 import { isSeeded } from '@/lib/db';
-import { openAiAvailable } from '@/lib/openaiClient';
-import { apiFootballAvailable } from '@/lib/apiFootball';
 
 export const dynamic = 'force-dynamic';
 
+interface LogRow {
+  id: number; ran_at: string; source: string; ok: number;
+  matches_updated: number; message: string;
+}
+
+// Public endpoint — expose only non-sensitive operational facts.
+// Full diagnostics (provider errors, quota messages, config status) stay in
+// the server logs.
 export async function GET() {
   try {
     if (!isSeeded()) {
-      return NextResponse.json({ error: 'Database not seeded. Run: npm run seed' }, { status: 503 });
+      return NextResponse.json({ error: 'Service is initializing.' }, { status: 503 });
     }
+    const meta = getMeta();
+    const lastRefresh = meta.lastRefresh as LogRow | null;
+    const logs = (getRefreshLogs(20) as LogRow[]).map((l) => ({
+      id: l.id,
+      ran_at: l.ran_at,
+      ok: l.ok,
+      matches_updated: l.matches_updated,
+    }));
     return NextResponse.json({
-      ...getMeta(),
-      logs: getRefreshLogs(20),
-      openAiConfigured: openAiAvailable(),
-      footballDataConfigured: Boolean(process.env.FOOTBALL_DATA_API_KEY),
-      apiFootballConfigured: apiFootballAvailable(),
+      teams: meta.teams,
+      matches: meta.matches,
+      finished: meta.finished,
+      prettyToday: meta.prettyToday,
+      lastRefresh: lastRefresh
+        ? { ran_at: lastRefresh.ran_at, ok: lastRefresh.ok, matches_updated: lastRefresh.matches_updated }
+        : null,
+      logs,
     });
   } catch (err) {
     console.error('[api/meta]', err);
-    return NextResponse.json({ error: 'Failed to load settings data.' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to load data.' }, { status: 500 });
   }
 }

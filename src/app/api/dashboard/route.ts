@@ -12,7 +12,15 @@ export async function GET() {
         { status: 503 }
       );
     }
-    return NextResponse.json({ ...getDashboard(), meta: getMeta() });
+    const meta = getMeta();
+    const last = meta.lastRefresh as { ran_at: string } | null;
+    return NextResponse.json({
+      ...getDashboard(),
+      meta: {
+        prettyToday: meta.prettyToday,
+        lastRefresh: last ? { ran_at: last.ran_at } : null,
+      },
+    });
   } catch (err) {
     console.error('[api/dashboard]', err);
     return NextResponse.json({ error: 'Failed to load dashboard data.' }, { status: 500 });

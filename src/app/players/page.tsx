@@ -13,7 +13,6 @@ interface PlayersData {
   teams: TeamRow[];
   players: Player[];
   totalPlayers: number;
-  apiFootballConfigured: boolean;
 }
 
 const POSITION_LABELS: Record<string, string> = {
@@ -89,23 +88,13 @@ export default function PlayersPage() {
       {data.totalPlayers === 0 && (
         <div className="card space-y-3 p-5">
           <h2 className="font-bold">No squads loaded yet</h2>
-          {data.apiFootballConfigured ? (
-            <>
-              <p className="text-sm text-zinc-400">
-                Squads and player photos come from API-Football. Load all 48 national squads
-                (~1,250 players) — this uses about 49 of your 100 daily API calls.
-              </p>
-              <button className="btn-primary" onClick={loadSquads} disabled={loadingSquads}>
-                {loadingSquads ? 'Loading squads… (can take a minute)' : '⬇️ Load all 48 squads'}
-              </button>
-            </>
-          ) : (
-            <p className="text-sm text-zinc-400">
-              Add <code className="rounded bg-white/10 px-1">API_FOOTBALL_KEY</code> to your environment
-              (free key at dashboard.api-sports.io) to enable squads, player photos, goalscorers and cards —
-              then refresh the data or press the load button here.
-            </p>
-          )}
+          <p className="text-sm text-zinc-400">
+            Squad data hasn&apos;t been imported yet. Press the button below to load the 48 national
+            squads — it can take a minute.
+          </p>
+          <button className="btn-primary" onClick={loadSquads} disabled={loadingSquads}>
+            {loadingSquads ? 'Loading squads… (can take a minute)' : '⬇️ Load squads'}
+          </button>
           {loadMsg && <p className="text-[12px] text-gold">{loadMsg}</p>}
         </div>
       )}
