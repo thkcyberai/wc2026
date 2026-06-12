@@ -57,7 +57,15 @@ export default function SettingsPage() {
       </div>
 
       <div className="card p-5">
-        <h2 className="mb-3 font-bold">Update history</h2>
+        <h2 className="mb-3 flex items-baseline justify-between font-bold">
+          Update history
+          <span className="text-[10px] font-normal text-zinc-600">
+            match data courtesy of{' '}
+            <a href="https://www.football-data.org" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400">
+              football-data.org
+            </a>
+          </span>
+        </h2>
         {data.logs.length === 0 ? (
           <p className="text-sm text-zinc-500">No updates yet.</p>
         ) : (
