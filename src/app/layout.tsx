@@ -34,7 +34,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             OpenAI used only for data normalization, never as score source.
           </p>
           <p className="font-semibold text-zinc-400">
-            All rights reserved by <span className="text-accent">Facti.ai</span>
+            All rights reserved by{' '}
+            <a
+              href="https://facti.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent hover:underline"
+            >
+              Facti.ai
+            </a>
           </p>
         </footer>
       </body>
