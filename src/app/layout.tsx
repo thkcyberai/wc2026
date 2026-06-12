@@ -47,6 +47,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Facti.ai
             </a>
           </p>
+          <p>
+            💬 Feedback &amp; contact:{' '}
+            <a
+              href="mailto:contact@facti.ai?subject=WC2026%20Calendar%20Tracker%20feedback"
+              className="text-accent hover:underline"
+            >
+              contact@facti.ai
+            </a>
+          </p>
         </footer>
       </body>
     </html>
