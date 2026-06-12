@@ -30,8 +30,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
         <footer className="mx-auto max-w-6xl space-y-1 px-4 pb-8 text-center text-[11px] text-zinc-500">
           <p>
-            Data stored in SQLite · scores from public sources (football-data.org / openfootball) ·
-            OpenAI used only for data normalization, never as score source.
+            Unofficial fan project · match data courtesy of{' '}
+            <a href="https://www.football-data.org" target="_blank" rel="noopener noreferrer" className="hover:underline">
+              football-data.org
+            </a>{' '}
+            and public sources · not affiliated with FIFA.
           </p>
           <p className="font-semibold text-zinc-400">
             All rights reserved by{' '}
