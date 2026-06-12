@@ -6,6 +6,16 @@
   color-scheme: dark;
 }
 
+/* Native <select> dropdown options: force readable colors (Windows Chrome
+   renders the popup with its own colors unless explicitly set). */
+select {
+  color-scheme: dark;
+}
+select option {
+  background-color: #10241a;
+  color: #f4f4f5;
+}
+
 body {
   @apply bg-pitch-950 text-zinc-100 antialiased;
   background-image:
