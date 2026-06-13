@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import MatchCard from '@/components/MatchCard';
 import RefreshButton from '@/components/RefreshButton';
@@ -37,6 +38,14 @@ function Section({ title, matches, empty }: { title: string; matches: MatchView[
 export default function DashboardPage() {
   const { data, loading, error, reload } = useFetch<DashboardData>('/api/dashboard');
   const { t, locale } = useI18n();
+
+  // auto-reload the dashboard every 60s while a match is live
+  const hasLive = (data?.live?.length ?? 0) > 0;
+  useEffect(() => {
+    if (!hasLive) return;
+    const id = setInterval(() => void reload(), 60_000);
+    return () => clearInterval(id);
+  }, [hasLive, reload]);
 
   if (loading) return <Loading />;
   if (error || !data) return <ErrorBox message={error ?? 'No data'} onRetry={reload} />;
