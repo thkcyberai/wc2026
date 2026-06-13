@@ -17,7 +17,8 @@ const NAME_ALIASES: Record<string, string> = {
   'côte d\'ivoire': 'Ivory Coast', 'ivory coast': 'Ivory Coast', iran: 'Iran',
   'cabo verde': 'Cape Verde', 'congo dr': 'DR Congo', 'dr congo': 'DR Congo',
   'bosnia-herzegovina': 'Bosnia and Herzegovina', bosnia: 'Bosnia and Herzegovina',
-  curacao: 'Curaçao',
+  'bosnia & herzegovina': 'Bosnia and Herzegovina', 'bosnia and herzegovina': 'Bosnia and Herzegovina',
+  curacao: 'Curaçao', 'korea south': 'South Korea', 'united states of america': 'United States',
 };
 
 function teamResolver(db: Database.Database) {
@@ -143,6 +144,26 @@ export async function syncMatchEvents(db: Database.Database): Promise<string> {
   if (unmappedFinished.n > 0) {
     try {
       const fixtures = await fetchFixtures();
+
+      // names the alias table can't resolve → ask OpenAI to map them once
+      const extra = new Map<string, number>();
+      const unresolved = new Set<string>();
+      for (const f of fixtures) {
+        if (!resolve(f.teams.home.name)) unresolved.add(f.teams.home.name);
+        if (!resolve(f.teams.away.name)) unresolved.add(f.teams.away.name);
+      }
+      if (unresolved.size && openAiAvailable()) {
+        const { canonical } = teamResolver(db);
+        const mapping = await mapTeamNames([...unresolved], canonical);
+        if (mapping) {
+          for (const [input, canon] of Object.entries(mapping)) {
+            const id = canon ? resolve(canon) : null;
+            if (id) extra.set(input.toLowerCase(), id);
+          }
+        }
+      }
+      const resolveAny = (n: string) => resolve(n) ?? extra.get(n.trim().toLowerCase()) ?? null;
+
       const byTeams = db.prepare(`
         SELECT id FROM matches
         WHERE (home_team_id = @h AND away_team_id = @a) OR (home_team_id = @a AND away_team_id = @h)
@@ -152,14 +173,17 @@ export async function syncMatchEvents(db: Database.Database): Promise<string> {
       );
       const tx = db.transaction(() => {
         for (const f of fixtures) {
-          const h = resolve(f.teams.home.name);
-          const a = resolve(f.teams.away.name);
+          const h = resolveAny(f.teams.home.name);
+          const a = resolveAny(f.teams.away.name);
           if (!h || !a) continue;
           const row = byTeams.get({ h, a }) as { id: number } | undefined;
           if (row) ins.run(row.id, f.fixture.id);
         }
       });
       tx();
+      if (unresolved.size) {
+        console.log(`[events] unresolved provider names: ${[...unresolved].join(', ')} (OpenAI mapped ${extra.size})`);
+      }
     } catch (e) {
       return `events: fixture mapping failed (${(e as Error).message})`;
     }
