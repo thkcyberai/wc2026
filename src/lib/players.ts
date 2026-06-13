@@ -165,6 +165,15 @@ export async function syncMatchEvents(db: Database.Database): Promise<string> {
     }
   }
 
+  // Self-heal: a match marked synced but with zero stored events was synced
+  // too early (provider hadn't published events yet) — retry it.
+  db.prepare(`
+    UPDATE af_fixture_map SET events_synced = 0
+    WHERE events_synced = 1
+      AND match_id IN (SELECT id FROM matches WHERE status='finished')
+      AND match_id NOT IN (SELECT DISTINCT match_id FROM match_events)
+  `).run();
+
   // 2. fetch events for finished matches not yet synced
   const pending = db.prepare(`
     SELECT fm.match_id, fm.af_fixture_id FROM af_fixture_map fm
@@ -190,6 +199,7 @@ export async function syncMatchEvents(db: Database.Database): Promise<string> {
   for (const p of pending) {
     try {
       const events = await fetchFixtureEvents(p.af_fixture_id);
+      let inserted = 0;
       const tx = db.transaction(() => {
         del.run(p.match_id);
         for (const ev of events) {
@@ -204,11 +214,14 @@ export async function syncMatchEvents(db: Database.Database): Promise<string> {
             playerId = (playerByName.get(teamId, ev.player.name) as { id: number } | undefined)?.id ?? null;
           }
           ins.run(p.match_id, teamId, playerId, ev.player.name, type, ev.time.elapsed, ev.time.extra);
+          inserted++;
         }
-        markSynced.run(p.match_id);
+        // Only mark synced once we actually stored events — an empty response
+        // usually means the provider hasn't published them yet; retry next run.
+        if (inserted > 0) markSynced.run(p.match_id);
       });
       tx();
-      synced++;
+      if (inserted > 0) synced++;
     } catch (e) {
       errors.push((e as Error).message);
       if (/budget/i.test((e as Error).message)) break;
