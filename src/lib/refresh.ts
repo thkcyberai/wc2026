@@ -18,6 +18,7 @@ import type { RefreshResult } from './types';
 
 interface SourceFixture {
   matchNumber: number | null;
+  utcDate: string | null; // ISO kickoff from the feed — used to place knockout fixtures
   home: string;
   away: string;
   homeScore: number | null;
@@ -70,6 +71,7 @@ async function fromFootballData(): Promise<SourceFixture[]> {
     { 'X-Auth-Token': key }
   )) as {
     matches?: {
+      utcDate?: string;
       homeTeam?: { name?: string }; awayTeam?: { name?: string };
       score?: {
         fullTime?: { home?: number | null; away?: number | null };
@@ -83,6 +85,7 @@ async function fromFootballData(): Promise<SourceFixture[]> {
     .filter((m) => m.homeTeam?.name && m.awayTeam?.name)
     .map((m) => ({
       matchNumber: null,
+      utcDate: typeof m.utcDate === 'string' ? m.utcDate : null,
       home: m.homeTeam!.name!,
       away: m.awayTeam!.name!,
       homeScore: validScore(m.score?.fullTime?.home) ? m.score!.fullTime!.home! : null,
@@ -114,6 +117,7 @@ async function fromOpenFootball(): Promise<SourceFixture[]> {
       const finished = validScore(m.score1) && validScore(m.score2);
       out.push({
         matchNumber: typeof m.num === 'number' ? m.num : null,
+        utcDate: null,
         home: name(m.team1), away: name(m.team2),
         homeScore: finished ? (m.score1 as number) : null,
         awayScore: finished ? (m.score2 as number) : null,
@@ -165,6 +169,18 @@ function applyFixtures(
   fixtures: SourceFixture[],
   resolve: (n: string) => number | null
 ): number {
+  const dateOf = (iso: string) => iso.slice(0, 10); // UTC calendar day
+
+  // Knockout matches: for these we trust the OFFICIAL feed for who plays whom,
+  // matching a real fixture to a bracket slot by kickoff date (our schedule was
+  // seeded from the real FIFA calendar). This avoids depending on our own
+  // third-place allocation, which can differ from FIFA's official table.
+  const koMatches = db.prepare(
+    "SELECT id, kickoff_utc FROM matches WHERE stage != 'GROUP' ORDER BY kickoff_utc"
+  ).all() as { id: number; kickoff_utc: string }[];
+  const koDates = new Set(koMatches.map((m) => dateOf(m.kickoff_utc)));
+  const koUsed = new Set<number>();
+
   const byNumber = db.prepare(
     'SELECT id, status, home_team_id, away_team_id FROM matches WHERE id = ?'
   );
@@ -172,9 +188,16 @@ function applyFixtures(
     SELECT id, status, home_team_id, away_team_id FROM matches
     WHERE (home_team_id = @h AND away_team_id = @a) OR (home_team_id = @a AND away_team_id = @h)
   `);
-  const update = db.prepare(`
+  const updateScore = db.prepare(`
     UPDATE matches SET home_score=?, away_score=?, home_penalties=?, away_penalties=?, status=? WHERE id=?
   `);
+  const setKnockout = db.prepare(`
+    UPDATE matches SET home_team_id=?, away_team_id=?, home_score=?, away_score=?,
+      home_penalties=?, away_penalties=?, status=?, real_fixture=1 WHERE id=?
+  `);
+  const getMatch = db.prepare(
+    'SELECT home_team_id, away_team_id, home_score, away_score, status FROM matches WHERE id = ?'
+  );
 
   let updated = 0;
   const tx = db.transaction(() => {
@@ -183,6 +206,35 @@ function applyFixtures(
       const awayId = resolve(f.away);
       if (!homeId || !awayId) continue;
 
+      // ── Knockout fixture → place into its bracket slot by date ──
+      if (f.utcDate && koDates.has(dateOf(f.utcDate))) {
+        const day = dateOf(f.utcDate);
+        const t = Date.parse(f.utcDate);
+        let best: { id: number; kickoff_utc: string } | null = null;
+        let bestDiff = Infinity;
+        for (const km of koMatches) {
+          if (koUsed.has(km.id) || dateOf(km.kickoff_utc) !== day) continue;
+          const diff = Math.abs(Date.parse(km.kickoff_utc) - t);
+          if (diff < bestDiff) { bestDiff = diff; best = km; }
+        }
+        if (best) {
+          koUsed.add(best.id);
+          const cur = getMatch.get(best.id) as {
+            home_team_id: number | null; away_team_id: number | null;
+            home_score: number | null; away_score: number | null; status: string;
+          };
+          // never wipe a real result with a transient "scheduled" blip
+          const keepResult = cur.status === 'finished' && f.status === 'scheduled';
+          const status = keepResult ? 'finished' : f.status;
+          const hs = keepResult ? cur.home_score : f.homeScore;
+          const as_ = keepResult ? cur.away_score : f.awayScore;
+          setKnockout.run(homeId, awayId, hs, as_, f.homePens, f.awayPens, status, best.id);
+          updated++;
+        }
+        continue;
+      }
+
+      // ── Group-stage fixture → match by number/teams, update score only ──
       let row = (f.matchNumber ? byNumber.get(f.matchNumber) : undefined) as
         | { id: number; status: string; home_team_id: number | null; away_team_id: number | null }
         | undefined;
@@ -191,14 +243,12 @@ function applyFixtures(
       }
       if (!row) continue;
 
-      // orientation: source may list teams in the opposite order
       const flipped = row.home_team_id === awayId && row.away_team_id === homeId;
       const hs = flipped ? f.awayScore : f.homeScore;
       const as_ = flipped ? f.homeScore : f.awayScore;
       const hp = flipped ? f.awayPens : f.homePens;
       const ap = flipped ? f.homePens : f.awayPens;
 
-      // guard: never downgrade a finished match back to scheduled with no score
       if (row.status === 'finished' && f.status === 'scheduled') continue;
       if (f.status !== 'scheduled' && (hs === null || as_ === null)) continue;
 
@@ -207,7 +257,7 @@ function applyFixtures(
       ).get(row.id) as { home_score: number | null; away_score: number | null; status: string };
       if (current.home_score === hs && current.away_score === as_ && current.status === f.status) continue;
 
-      update.run(hs, as_, hp, ap, f.status, row.id);
+      updateScore.run(hs, as_, hp, ap, f.status, row.id);
       updated++;
     }
   });

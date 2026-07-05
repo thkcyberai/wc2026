@@ -75,6 +75,15 @@ function maybeStartAutoRefresh(db: Database.Database) {
   );
 }
 
+/** Idempotent schema migrations for databases created before a column existed. */
+function runMigrations(db: Database.Database) {
+  const cols = db.prepare("PRAGMA table_info(matches)").all() as { name: string }[];
+  if (!cols.some((c) => c.name === 'real_fixture')) {
+    db.exec('ALTER TABLE matches ADD COLUMN real_fixture INTEGER NOT NULL DEFAULT 0');
+    console.log('[db] migration: added matches.real_fixture');
+  }
+}
+
 export function getDb(): Database.Database {
   if (global.__wc2026db) return global.__wc2026db;
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
@@ -82,6 +91,7 @@ export function getDb(): Database.Database {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.exec(SCHEMA_SQL);
+  runMigrations(db);
   global.__wc2026db = db;
 
   // Auto-seed on first boot (fresh volume in production). Never reseeds an

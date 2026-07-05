@@ -37,7 +37,10 @@ CREATE TABLE IF NOT EXISTS matches (
   away_score       INTEGER,
   home_penalties   INTEGER,
   away_penalties   INTEGER,
-  status           TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled','live','finished'))
+  status           TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled','live','finished')),
+  -- 1 = teams for this knockout match came straight from the official feed
+  --     (by date match); the bracket resolver must not overwrite them.
+  real_fixture     INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS standings (

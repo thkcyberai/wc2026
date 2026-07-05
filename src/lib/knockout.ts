@@ -21,6 +21,13 @@ export function resolveKnockout(db: Database.Database): number {
     ORDER BY km.match_id
   `).all() as { match_id: number; side: 'home' | 'away'; slot_type: string; ref: string }[];
 
+  // Matches whose teams came straight from the official feed (by-date match).
+  // The resolver must not overwrite these — reality wins over our derivation.
+  const locked = new Set(
+    (db.prepare("SELECT id FROM matches WHERE real_fixture = 1").all() as { id: number }[])
+      .map((r) => r.id)
+  );
+
   const getStanding = db.prepare(
     'SELECT team_id FROM standings WHERE group_letter = ? AND position = ?'
   );
@@ -74,6 +81,7 @@ export function resolveKnockout(db: Database.Database): number {
 
   const apply = db.transaction(() => {
     for (const m of mappings) {
+      if (locked.has(m.match_id)) continue; // real teams from the feed — leave them
       switch (m.slot_type) {
         case 'GROUP_WINNER':
         case 'GROUP_RUNNERUP': {
